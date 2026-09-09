@@ -1,12 +1,4 @@
 ;
-;
-;
-;
-;
-;
-
-
-;
 ; High byte of the screen location. If page 7 is used then this would be 0xc0.
 ;
 SCREEN_HIGH		equ		0x40
@@ -22,7 +14,6 @@ SCREEN_HIGH		equ		0x40
 ;-----------------------------------------------------------------------------
 ; Update one line length input buffer. The buffer allows simple editing and
 ; moving left and right with cursor. The buffer is in 'insert' mode.
-; Input buffer does not understand/support key repeat.
 ;
 ; Sysvar buffer flags (VARS.input_buf_flags) are modified accordingly:
 ;   BUF_DIRTY_F is set if any editing of the buffer too place.
@@ -39,14 +30,24 @@ SCREEN_HIGH		equ		0x40
 ;  A, BC, DE, HL
 ;
 update_input_buffer:
-		; Return if the same key is kept pressed. Current implementation does
-		; not understand key repeat.. But if that ever gets implemented this
-		; is the place to check the repeat timer(s).
-		;
+		; Return if the same key is kept pressed.
 		ld		a,(ix+zxmon.VARS.key_raw_pressed)
 		cp		(ix+zxmon.VARS.key_raw_previous)
-		ret z
-
+		jr nz,	.different_raw_code
+		; Check first key repeat threshold is passed
+		dec		(ix+zxmon.VARS.key_rep_timer1)
+		ret nz
+		; Ok.. make sure we we get here next time as well..
+		inc		(ix+zxmon.VARS.key_rep_timer1)
+		; is between keys repeat timer expired?
+		dec		(ix+zxmon.VARS.key_rep_timer2)
+		ret nz
+		jr		.repeat_or_new_key
+		;
+.different_raw_code:
+		ld		(ix+zxmon.VARS.key_rep_timer1),zxmon.KEY_REP_TIMER1
+.repeat_or_new_key:
+		ld		(ix+zxmon.VARS.key_rep_timer2),zxmon.KEY_REP_TIMER2
 		ld		(ix+zxmon.VARS.key_raw_previous),a
 		; Check for special keys. These include:
 		;  - caps shift + '5' i.e. cursor left
@@ -266,8 +267,9 @@ scroll_screen_up_and_reset_buffer:
 
 		; Scroll screen up by one row
 		ld		de,0
-		ld		c,32
-		ld		b,zxmon.MAXY-1
+		ld		bc,((zxmon.MAXY-1) << 8)|32
+		;ld		c,32
+		;ld		b,zxmon.MAXY-1
 		call	scroll_up
 		
 		xor		a
@@ -379,9 +381,10 @@ scan_keys:
 ;  C_flag = 1 if no key was pressed, and  A = 1
 ;
 ; Trashes:
-;  BC
+;  None
 ;
 scan_caps_shift_for_break:
+		push	bc
 		ld		bc,0xfefe
 		in		a,(c)
 		rrca
@@ -394,10 +397,12 @@ scan_caps_shift_for_break:
 		jr nc,	.user_abort
 		;
 		ld		a,1
+		pop		bc
 		ret
 		;
 .user_abort:
 		xor		a
+		pop		bc
 		ret
 
 
@@ -613,7 +618,8 @@ print_at:
 		inc		hl
 		and		a
 		ret		z
-.no_new_line:
+		push	af
+		and		01111111b
 		push	hl
 		push	bc
 		push	de
@@ -623,6 +629,8 @@ print_at:
 		pop		de
 		pop		bc
 		pop		hl
+		pop		af
+		ret		m
 		inc		e
 
 		djnz	.print_loop

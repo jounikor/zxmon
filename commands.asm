@@ -220,9 +220,18 @@ f_help:
 		call	zxmon.input_and_screen.print_at_bottom
 		call 	zxmon.input_and_screen.scroll_up_whole_screen
 		pop		bc
+		call	zxmon.input_and_screen.scan_caps_shift_for_break
+		jr nc,	.help_abort
 		djnz	.help_loop
 		xor		a
 		ret
+.help_abort:
+		; Fake ESXDOS error with user abort
+		; A = 0
+		ld		(ix+VARS.file_errno),a
+		ld		a,CMD_EESXDOS
+		ret
+
 
 
 s_command_array:
@@ -238,11 +247,20 @@ s_command_array:
 		db		2,"m",0
 		dw		zxmon.memmon.f_mon8
 
+		db		3,"dd",0
+		dw		zxmon.disasm.f_dis16
+
+		db		2,"d",0
+		dw		zxmon.disasm.f_dis8
+
 		db		2,"p",0
 		dw		zxmon.memmon.f_poke
 
         db      2,"b",0
         dw      zxmon.memmon.f_bank
+
+        db      2,"f",0
+        dw      zxmon.memmon.f_fill
 
         db      3,"ls",0
         dw      zxmon.fileio.f_ls
@@ -252,6 +270,12 @@ s_command_array:
 
 		db		2,"r",0
 		dw		zxmon.fileio.f_read
+
+		db		2,"w",0
+		dw		zxmon.fileio.f_write
+
+		db		2,"c",0
+		dw		zxmon.memmon.f_call
 
 		db		2,"x",0
 		dw		f_exit
@@ -266,37 +290,42 @@ s_command_array:
 
 
 s_err_syntax_error:
-        db      "Syntax error",0
+        dc      "Syntax error"
 s_err_num_params:
-        db      "Wrong number of parameters",0
+        dc      "Wrong number of parameters"
 s_err_num_conversion:
-        db      "Invalid HEX/DEC number",0
+        dc      "Invalid HEX/DEC number"
 s_err_atari:
-		db		"IS T3H SHIT!",0
+		dc		"IS T3H SHIT!"
 s_err_c64:
-		db		"64K RAM SYSTEM 38911 BASIC BYTES FREE",0
+		dc		"64K RAM SYSTEM 38911 BASIC BYTES FREE"
 s_err_esxdos:
-		db		"ESXDOS error "
+		db		"ESXDOS error _"
 S_ERR_ESXDOS_LEN	equ	13
 s_err_user_abort:
-		db		"Command aborted",0
+		dc		"Command aborted"
 s_err_page:
-		db		"Invalid RAM page",0
+		dc		"Invalid RAM page"
 
 s_help:
-		db		10
+		db		14
 		;        0         1         2.        3          4
 		;        0123456789012345678901234567890123456789012
-		db		"COMMAND SYNTAX:",0
-		db		"m [<addr>]                   :show 8 lines",0
-		db		"mm [<addr>]                 :show 16 lines",0
-		db		"p <addr> [<num>|'<str>] ..           :poke",0
-		db		"b <bank>                     :set RAM page",0
-		db		"ls                       :show current dir",0
-		db		"cd <dir>               :change current dir",0
-		db		"r <file> <addr> [<off> [<len>]] :read file",0
-		db		"w <file> <addr> <len>          :write file",0
-		db		"x                           :exit to BASIC",0
+		dc		"COMMAND SYNTAX:"
+		dc		"m [<addr>]                   :show 8 lines"
+		dc		"mm [<addr>]                 :show 16 lines"
+		dc		"p <addr> [<num>|'<str>] ..           :poke"
+		dc		"b <bank>                     :set RAM page"
+		dc		"ls                       :show current dir"
+		dc		"cd <dir>               :change current dir"
+		dc		"r <file> <addr> [<off> [<len>]] :read file"
+		dc		"w <file> <addr> <len>          :write file"
+		dc		"f <addr1> <addr2> <byte>         :fill mem"
+		dc		"d [<addr>]            :disassemble 8 lines"
+		dc		"dd [<addr>]          :disassemble 16 lines"
+		dc		"c <addr>                  :call subroutine"
+		dc		"x                           :exit to BASIC"
+
 
 
 

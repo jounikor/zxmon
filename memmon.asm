@@ -195,6 +195,92 @@ f_poke:
 
 ;-----------------------------------------------------------------------------
 ;
+; Fill memory range with a byte value. 
+;
+; Input:
+;  IX = ptr to sysvars, which contains tokenized ARGV[]..
+;
+; Returns:
+;  A = 0 when no error and A contains file handle.
+;  A > 0 and A contains error code.
+;
+f_fill:
+		ld		a,(ix+zxmon.VARS.input_argc)
+		cp		4
+		jr z,	.enough_parameters
+		ld		a,CMD_ENUMPARAMS
+		ret
+		;
+.enough_parameters:
+		ld		d,ixh
+		ld		e,(ix+zxmon.VARS.input_argv+1)
+		
+		; Get start address
+		call	zxmon.string.str_to_number
+		jr nc,	.start_conversion_ok
+.num_conversion_failed:
+		ld		a,CMD_ENUMCONV
+		ret
+		; 
+.start_conversion_ok:
+		ld		(ix+zxmon.VARS.mem_addr+0),l
+		ld		(ix+zxmon.VARS.mem_addr+1),h
+
+		ld		d,ixh
+		ld		e,(ix+zxmon.VARS.input_argv+2)
+		
+		; Get end address
+		call	zxmon.string.str_to_number
+		jr c,	.num_conversion_failed
+		;
+.end_conversion_ok:
+		push	hl
+		;
+		;
+		;  fill byte
+		ld		d,ixh
+		ld		e,zxmon.VARS.input_argv+3
+.args_loop:
+		ld		a,(de)
+		ld		e,a
+		ld		a,(de)
+		;cp		"'"
+		cp		0x27
+		jr nz,	.got_number
+		; C_flag = 0.. following code does not change flags
+		inc		de
+		ld		a,(de)
+		ld		l,a
+		jr		.do_fill
+		;
+.got_number:
+		call	zxmon.string.str_to_number
+.do_fill:
+		pop		de
+		jr c,	.num_conversion_failed
+		ld		b,l
+		ld		l,(ix+zxmon.VARS.mem_addr+0)
+		ld		h,(ix+zxmon.VARS.mem_addr+1)
+		; 
+		;  B = byte to fill woth
+		; DE = end address
+		; HL = start address
+		;
+.fill_loop:
+		ld		(hl),b
+		inc		hl
+		ld		a,e
+		sub		l
+		jr nz,	.fill_loop
+		ld		a,d
+		sub		h
+		jr nz,	.fill_loop
+		;
+		ret
+
+
+;-----------------------------------------------------------------------------
+;
 ; Change memory bank at $c000. The command also updates Spectrum's
 ; SYSVARs (23388) with the active page number.
 ;
@@ -233,5 +319,61 @@ f_bank:
 		ei
 		xor		a
 		ret
+
+
+;-----------------------------------------------------------------------------
+;
+; CALL a subroutine
+;
+; Input:
+;  IX = ptr to sysvars, which contains tokenized ARGV[]..
+;
+; Returns:
+;  A = 0 when no error and A contains file handle.
+;  A > 0 and A contains error code.
+;
+f_call:
+		ld		a,(ix+zxmon.VARS.input_argc)
+		cp		2
+		jr nc,	.enough_parameters
+		ld		a,CMD_ENUMPARAMS
+		ret
+		;
+.enough_parameters:
+		ld		d,ixh
+		ld		e,(ix+zxmon.VARS.input_argv+1)
+		
+		; Get CALL address
+		call	zxmon.string.str_to_number
+		jr nc,	.num_conversion_ok
+.num_conversion_failed:
+		ld		a,CMD_ENUMCONV
+		ret
+		; 
+.num_conversion_ok:
+		ld		(ix+zxmon.VARS.mem_addr+0),l
+		ld		(ix+zxmon.VARS.mem_addr+1),h
+
+		push	ix
+		push	hl
+		push	de
+		push	bc
+		push	af
+
+		call	.save_our_souls
+		; restore
+
+		pop		af
+		pop		bc
+		pop		de
+		pop		hl
+		pop		ix
+
+		xor		a
+		ret
+
+.save_our_souls:
+		jp		(hl)
+
 
 		ENDMODULE

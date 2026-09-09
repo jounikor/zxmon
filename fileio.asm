@@ -139,9 +139,10 @@ f_cd:
 ;  A = 0 when no error and A contains file handle.
 ;  A > 0 and A contains error code.
 ;
+; Trashes:
+;  BC,DE,HL
 ;
-;
-;
+; ESXDOS notes:
 ;
 ; F_FSTAT: Get file info/status to buffer at HL. 
 ;          A=handle
@@ -196,7 +197,7 @@ f_read:
 		push	hl
 		pop		ix
 		ld      a,CUR_DRIVE
-        ld      b,FA_OPEN_EX|FA_READ|FA_WRITE
+        ld      b,FA_OPEN_EX|FA_READ
         rst     8
         db      F_OPEN
         pop     ix
@@ -246,7 +247,7 @@ f_read:
 		rst		8
 		db		F_SEEK
 		pop		ix
-		jr c,	esxdos_error
+		jp c,	esxdos_error
 
 		; Convert file length
 		ld		a,(ix+VARS.input_argc)
@@ -288,7 +289,7 @@ f_read:
 		rst		8
 		db		F_READ
 		pop		ix
-		jr c,	esxdos_error
+		jp c,	esxdos_error
 		;
 		push	bc
 		ld		d,ixh
@@ -311,8 +312,135 @@ f_read:
 		ld		l,VARS.output_buf
 		call	zxmon.input_and_screen.print_at_bottom
 		call	zxmon.input_and_screen.scroll_up_whole_screen
-		jr		esxdos_close_and_exit
+		jp		esxdos_close_and_exit
 
+;-----------------------------------------------------------------------------
+;
+; Write a file from RAM.
+;
+; Input:
+;  IX = ptr to sysvars, which contains tokenized ARGV[] with a write command,
+;       memory location, length and filename.
+;
+; Returns:
+;  A = 0 when no error and A contains file handle.
+;  A > 0 and A contains error code.
+;
+; Trashes:
+;  BC,DE,HL
+;
+; ESXDOS notes:
+;
+;
+;  F_WRITE: Write BC bytes from HL off file handle A. 
+;           On return BC=number of bytes actually written.
+;           File pointer gets updated.
+;
+
+	DISPLAY	"f_write()",/H,f_write
+
+f_write:
+		ld		(ix+VARS.file_errno),EOK
+		ld		a,(ix+zxmon.VARS.input_argc)
+		cp		4
+		jr z,	.enough_parameters
+		ld		a,CMD_ENUMPARAMS
+		ret
+		;
+.enough_parameters:
+		; Get file name into HL and open the file
+		push	ix
+		pop		hl
+		; all this push pop stuff is because when ran from RAM
+		; ESXDOS expects IX instead of HL..
+		push	hl
+		ld		l,(ix+zxmon.VARS.input_argv+1)
+		push	hl
+		pop		ix
+		ld      a,CUR_DRIVE
+        ld      b,FA_CREATE_AL|FA_WRITE
+        rst     8
+        db      F_OPEN
+        pop     ix
+        jr c,   esxdos_error_no_close
+        ld      (ix+VARS.file_handle),a
+	
+		; Parse load address and optional length and optional offset
+		; The command syntax is:
+		;  w <filename> <16-bit address> <16-bit length>
+		;
+		; Parse save RAM address
+		ld		d,ixh
+		ld		e,(ix+VARS.input_argv+2)
+		call	zxmon.string.str_to_number
+		jr nc,	.addr_conversion_ok
+		call	esxdos_close_and_exit
+		ld		a,CMD_ENUMCONV
+		ret
+.addr_conversion_ok:
+		ld		(ix+VARS.mem_addr+0),l
+		ld		(ix+VARS.mem_addr+1),h
+
+		; Convert file length
+		ld		d,ixh
+		ld		e,(ix+VARS.input_argv+3)
+		call	zxmon.string.str_to_number
+		jr nc,	.length_conversion_ok
+		call	esxdos_close_and_exit
+		ld		a,CMD_ENUMCONV
+		ret
+.length_conversion_ok:
+		ld		d,h
+		ld		e,l
+		ld		l,(ix+VARS.mem_addr+0)
+		ld		h,(ix+VARS.mem_addr+1)
+		push	hl
+		add		hl,de
+		jr nc,	.file_size_ok
+
+		ex		de,hl
+
+		or		a
+		sbc		hl,de
+		ex		de,hl
+.file_size_ok:
+		ld		b,d
+		ld		c,e
+		pop		hl
+		ld		a,(ix+VARS.file_handle)
+		;  A = file handle
+		; BC = bytes to read
+		; HL = memory address
+		push	ix
+		push	hl
+		pop		ix
+		rst		8
+		db		F_WRITE
+		pop		ix
+		jr c,	esxdos_error
+		;
+		push	bc
+		ld		d,ixh
+		ld		e,zxmon.VARS.output_buf
+		ld		hl,write_str
+		ld		bc,WRITE_STR_LEN
+		ldir
+		pop		hl
+		push	de
+		call	zxmon.string.hl_to_decstr
+		pop		de
+		ld		b,0
+		ld		c,a
+		ldir
+		ld		hl,bytes_str
+		ld		c,BYTES_STR_LEN
+		ldir
+		;
+		ld		h,d
+		ld		l,VARS.output_buf
+		call	zxmon.input_and_screen.print_at_bottom
+		call	zxmon.input_and_screen.scroll_up_whole_screen
+		jr		esxdos_close_and_exit
 
 ;-----------------------------------------------------------------------------
 ;
@@ -353,8 +481,15 @@ esxdos_skip_close_and_exit:
 
 ;-----------------------------------------------------------------------------
 ;
+; Preprare printable output from an ESXDOS dir entry.
+; Output is limited to 42 bytes and placed into VARS.output_buf.
+;
 ; Input:
+;  IX = ptr to sysvars (STRUCT VARS)
 ;  HL = ptr to directory entry (within 256 bytes aligned VARS structre)
+;
+; Trashes:
+;  A, BC, DE, HL
 ;
 ; ESXDOS dir entry looks like below:
 ;   <byte>   attributes (like MSDOS)
@@ -549,9 +684,11 @@ get_dword_to_dehl:
 
 current_dir_path:   db      ".",0
 dir_str:		db	"<DIR>"
-read_str:		db	"Read #"
+read_str:		db	"Read _"
+write_str:		db	"Wrote _"
 bytes_str:		db	" bytes",0
 READ_STR_LEN	equ	6
-BYTES_STR_LEN	equ	7
+WRITE_STR_LEN	equ	7
+BYTES_STR_LEN	equ	6+1		; add implicit \0
 
         ENDMODULE

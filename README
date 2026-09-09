@@ -1,5 +1,48 @@
-Work-in-progress version 0.1 of ZXMON memory monitor and possibly Z80
-disassembler for ZX Spectrum with ESXDOS 0.8.9 supported devices.
+Work-in-progress version 0.1 of esxMON memory monitor and possibly Z80
+disassembler for ZX Spectrum with ESXDOS 0.8.9 supported devices. One of the
+design(?) principles is to keep the code ROMmable i.e. no SMC, and no
+variables outside stack or IX indexed 256 bytes "sysvar" area.
+
+TODO:
+  - transfer code to .dot-command support instead of being run from RAM
+  - commandline option to load a file st startup
+
+GENERAL:
+Numbers are by default in hexdecimal. If they are preceded with _ in the
+input line they are treated as decimal. 
+Memory poke command also understands ASCII strings. A string is opened
+with ' character and string ends to next white space of end of line.
+
+Each command that takes <addr> as a parameter also changes the internal
+memory pointer to <addr>. This implies the next 'm' or 'mm' command
+without <addr> uses that previously defined <addr>.
+
+Supported commands:
+  m [<addr>]                       : show 8 lines of 8 byte blocks of RAM
+                                     starting from <addr>
+  mm [<addr>]                      : show 16 lines of 8 byte blocks of RAM
+                                     starting from <addr>
+  p <addr> [<num>|'<str>] ..       : poke bytes(!) or strings separated by
+                                   : white spaces into RAM starting from
+								   : <addr>
+  b <bank>                         : set RAM page at $C000 to <bank>
+  ls                               : show content of the current working dir
+  cd <dir>                         : change current working dir
+  r <file> <addr> [<off> [<len>]]  : read <file> into RAM <addr> optionally
+                                   : at offset <off> (default 0) and optinally
+								   : max <len> (default entire file)
+  w <file> <addr> <len>            : write <file> from RAM <addr> and <len>
+                                   : bytes
+  f <addr1> <addr2> <byte>         : fill memory between <addr1> and <addr2>
+                                   : with value <byte>
+  d [<addr>]                       : Disassemble 8 opcodes starting from
+                                   : <addr>
+  dd [<addr>]                      : Disassemble 16 opcodes starting from
+                                   : <addr>
+  c <addr>                         : CALL subroutine at <addr>
+  x                                : exit to BASIC
+  h                                : print help page
+
 
 “We should forget about small efficiencies, say about 97% of the time:
 premature optimization is the root of all evil. Yet we should not pass

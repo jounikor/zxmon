@@ -20,9 +20,10 @@ main:
 		; We reference the sysvars via IX. sysvars are 256 byte alogned and
 		; the size of the struct never exceeds 256 bytes.
 m:		ld		ix,sys_vars
+		call	init_sys_vars
 
 		; Magic copyright and version greeting output
-		ld		hl,COPYRIGHT
+		ld		hl,s_copyright
 		ld		de,AT_LOW_LEFT
 		ld		b,0
 		call	input_and_screen.print_at
@@ -56,16 +57,44 @@ main_loop:
 		call	input_and_screen.blink_cursor
 		bit		VARS_EXIT_F,(ix+VARS.flags)
 		jr z,	main_loop
+		ld		bc,0
+_gonna_exit_to_basic:
 		ret
 
+;
+; Inputs:
+;  IX = prt to system variables
+init_sys_vars:
+		push	ix
+		pop		hl
+
+		; clear structure
+		ld		b,VARS
+.zero_mem:
+		ld		(hl),0
+		inc		hl
+		djnz	.zero_mem
+
+		; place constants
+		ld		(ix+VARS.input_cur_timer),BLINK_T
+		ld		(ix+VARS.key_rep_timer1),KEY_REP_TIMER1
+		ld		(ix+VARS.key_rep_timer2),KEY_REP_TIMER2
+		ret
+
+
+
+s_copyright:	dc	"esxMON V0.01 (C) 20261109 Mr.Spiv/ScoopeX"
+
+		DISPLAY	"_gonna_exit_to_basic:", /H, _gonna_exit_to_basic
+
 		INCLUDE	"zxmon.inc"		
-		INCLUDE	"input_and_screen.asm"
 		INCLUDE "string.asm"
 		INCLUDE "math.asm"
 		INCLUDE	"memmon.asm"
 		INCLUDE	"commands.asm"
 		INCLUDE	"fileio.asm"
-		;INCLUDE	"disasm.asm"
+		INCLUDE	"disasm.asm"
+		INCLUDE	"input_and_screen.asm"
 
 ; System variables must be 256 bytes aligned.
 ;

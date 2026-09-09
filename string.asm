@@ -90,7 +90,7 @@ byte_in_A_to_ascii:
 		ld		(hl),a
 		inc		hl
 		pop		de
-		ret
+		ret 
 
 ;-----------------------------------------------------------------------------
 ;
@@ -104,6 +104,9 @@ byte_in_A_to_ascii:
 ;  DEHL = number is case of a dword
 ;  C_flag = 0 if conversion was OK
 ;  C_flag = 1 if conversion failed; HL contains carbage
+;
+; Note:
+;  Caller has to zero De and HL
 ;
 ; Trashes:
 ;  A
@@ -196,6 +199,9 @@ str_to_number:
 ;  DEHL = converted number
 ;  C_flag = 0 if conversion was OK
 ;  C_flag = 1 if conversion failed; HL contains carbage
+;
+; Note:
+;  Caller has to zero De and HL
 ;
 _decstr_to_number:
 .number_loop:
