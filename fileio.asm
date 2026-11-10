@@ -1,4 +1,9 @@
-		DEVICE	ZXSPECTRUM128
+;-----------------------------------------------------------------------------
+;
+; (c) 2026 Jouni 'Mr.Spiv' Korhonen
+;
+
+ 		DEVICE	ZXSPECTRUM128
 		SLDOPT	COMMENT WPMEM, LOGPOINT, ASSERTION
 
 		MODULE	fileio

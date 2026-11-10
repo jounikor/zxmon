@@ -1,6 +1,6 @@
+;-----------------------------------------------------------------------------
 ;
-;
-;
+; (c) 2026 Jouni 'Mr.Spiv' Korhonen
 ;
 ; Constants
 
@@ -37,9 +37,8 @@ CMD_EC64            equ     5
 CMD_EESXDOS			equ		6
 CMD_EVALUE			equ		7		; Input value is invalid / out of bounds
 
-
 		STRUCT	VARS
-		; these two buffer must fit into 256 bytes, and indexin 
+					; these two buffer must fit into 256 bytes, and indexing
 input_buf			TEXT MAXX+1,{0,0,0}
 output_buf			TEXT MAXX+1,{0,0,0}
 conversion_buf		ds	SZ_CONV_STR+1

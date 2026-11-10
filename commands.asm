@@ -1,3 +1,7 @@
+;-----------------------------------------------------------------------------
+;
+; (c) 2026 Jouni 'Mr.Spiv' Korhonen
+;
 		DEVICE	ZXSPECTRUM128
 		SLDOPT	COMMENT WPMEM, LOGPOINT, ASSERTION
 
@@ -316,7 +320,7 @@ s_help:
 		dc		"mm [<addr>]                 :show 16 lines"
 		dc		"p <addr> [<num>|'<str>] ..           :poke"
 		dc		"b <bank>                     :set RAM page"
-		dc		"ls                       :show current dir"
+		dc		"ls [<dir>]               :show current dir"
 		dc		"cd <dir>               :change current dir"
 		dc		"r <file> <addr> [<off> [<len>]] :read file"
 		dc		"w <file> <addr> <len>          :write file"

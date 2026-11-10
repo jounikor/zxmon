@@ -331,7 +331,7 @@ prefix_ED_LD:
 		db		ARG_LD+64,'A'-32,','-32+64,'I'-32+128
 		db		ARG_LD+64,'A'-32,','-32+64,'R'-32+128
 		db		'R'-32,'R'-32,'D'-32+128
-		db		'R'-32,'L'-32,'D'-32+128
+		db		'R'-32,ARG_LD+128				; RLD
 		db		'N'-32,'O'-32,'P'-32+128		; undocumented?
 		db		'N'-32,'O'-32,'P'-32+128		; undocumented?
 		
@@ -394,8 +394,8 @@ opcode_11_alu_ok:
 		db		'R'-32,'E'-32,'T'-32+64,ARG_CC_Y+128
 		db		'J'-32,'P'-32+64,ARG_CC_Y,','-32,ARG_IMM16_INC+128
 		db		'C'-32,'A'-32,'L'-32,'L'-32+64,ARG_CC_Y,','-32,ARG_IMM16_INC+128
-		db		ARG_ALU_Y,ARG_IMM8_INC+128			; aly[y] nn
-		db		'R'-32,'S'-32,'T'-32+64,ARG_Y_8+128	; RST p
+		db		ARG_ALU_Y,ARG_IMM8_INC+128				; alu[y] nn
+		db		'R'-32,'S'-32,'T'-32+64,ARG_Y_8+128		; RST p
 
 opcode_11_misc:
 		ld		l,a
@@ -406,22 +406,23 @@ opcode_11_misc:
 .IX_IY_ok:
 		ld		a,l
 		inc		a
+		; Check for RST
 		cp		4
 		jr		z,opcode_11_alu_ok
 		call	jump_tab8
-		db		0
+		db		0												; excess byte
 		db		opcode_11_pop-$
 		db		opcode_11_jp-$
 		db		opcode_11_push-$
 opcode_11_pop:
 		call	print_opcode_str_index8_shift
-		db		'P'-32,'O'-32,'P'-32+64,'B'-32,'C'-32+128			; POP BC
+		db		'P'-32,'O'-32,'P'-32+64,ARG_RP_P+128			; POP BC
 		db		'R'-32,'E'-32,'T'-32+128						; RET
-		db		'P'-32,'O'-32,'P'-32+64,'D'-32,'E'-32+128			; POP DE
+		db		'P'-32,'O'-32,'P'-32+64,ARG_RP_P+128			; POP DE
 		db		'E'-32,'X'-32,'X'-32+128						; EXX
 		db		'P'-32,'O'-32,'P'-32+64,ARG_HL+128				; POP HL/IX/IY
 		db		'J'-32,'P'-32+64,'('-32,ARG_HL,')'-32+128		; JP (HL/IX/IY)
-		db		'P'-32,'O'-32,'P'-32+64,'A'-32,'F'-32+128			; POP AF
+		db		'P'-32,'O'-32,'P'-32+64,'A'-32,'F'-32+128		; POP AF
 		db		ARG_LD+64,'S'-32,'P'-32,ARG_HL+128				; LD SP,HL/IX/IY
 
 opcode_11_jp:
@@ -437,9 +438,9 @@ opcode_11_jp:
 
 opcode_11_push:
 		call	print_opcode_str_index8_shift
-		db		'P'-32,'U'-32,'S'-32,'H'-32+64,'B'-32,'C'-32+128
+		db		'P'-32,'U'-32,'S'-32,'H'-32+64,ARG_RP_P+128
 		db		'C'-32,'A'-32,'L'-32,'L'-32+64,ARG_IMM16_INC+128
-		db		'P'-32,'U'-32,'S'-32,'H'-32+64,'D'-32,'E'-32+128
+		db		'P'-32,'U'-32,'S'-32,'H'-32+64,ARG_RP_P+128
 		db		ARG_ERR+128
 		db		'P'-32,'U'-32,'S'-32,'H'-32+64,ARG_HL+128
 		db		ARG_ERR+128
@@ -460,14 +461,14 @@ opcode_00nnnnnn:
 opcode_00_reljumps:
 		bit		5,a
 		jr		z,.ok_test
-		ld		a,4<<3
+		ld		a,4<<3			; == 00100000b
 .ok_test:
 		call	print_opcode_str_index8_shift
 		db		'N'-32,'O'-32,'P'-32+128
 		db		'E'-32,'X'-32+64,'A'-32,'F'-32,','-32,'A'-32,'F'-32,"'"-32+128
 		db		'D'-32,'J'-32,'N'-32,'Z'-32+64,ARG_JR_D_INC+128			; DJNZ d
-		db		ARG_JR+64,','-32,ARG_JR_D_INC+128						; JR d
-		db		ARG_JR+64,ARG_CC_P,','-32,ARG_JR_D_INC+128			; JR cc,d
+		db		ARG_JR+64,ARG_JR_D_INC+128								; JR d
+		db		ARG_JR+64,ARG_CC_P,','-32,ARG_JR_D_INC+128				; JR cc,d
 		;db		ARG_JR+64,'N'-32,'Z'-32,','-32,ARG_JR_D_INC+128			; JR NZ,d
 		;db		ARG_JR+64,'Z'-32,','-32,ARG_JR_D_INC+128				; JR Z,d
 		;db		ARG_JR+64,'N'-32,'C'-32,','-32,ARG_JR_D_INC+128			; JR NC,d
@@ -476,17 +477,17 @@ opcode_00_reljumps:
 opcode_00_ldadd16_imm:
 		and		00001000b
 		jr		z,.ld16imm
-		ld		a,1
+		;ld		a,1
 .ld16imm:
 		; check if there was DD/FD prefix.. if so fix IX
-		push	af
+		ld		l,a
 		ld		a,c
 		and		a
 		jr		z,.no_DD_or_FD_prefix
 		dec		ix
 .no_DD_or_FD_prefix:
-		pop		af
-		call	print_opcode_str_index
+		ld		a,l
+		call	print_opcode_str_index8_shift
 		db		ARG_LD+64,ARG_RP_P,','-32,ARG_IMM16_INC+128			; LD rp[p],imm16
 		db		'A'-32,'D'-32,'D'-32+64,ARG_HL,','-32,ARG_RP_P+128	; ADD HL,rp[p]
 
@@ -803,7 +804,6 @@ func_ARG_R_Z:
 		jr		c,.no_DD_or_FD
 		dec		ix			; we have increased IX earlier
 							; for no reason.. UGLY FIX
-		;ld		c,0			; We support only one IXH or IXL per instruction
 .no_DD_or_FD:
 .not_H_or_L:
 		call	print_opcode_str_index
@@ -844,7 +844,8 @@ func_ARG_INDEX_B:
 		;
 		ld		(hl),'-'
 		neg
-		jr		.positive_index_skip
+		;jr		.positive_index_skip
+		db		00010001b			; LD DE,nnnnn to skip LD (HL),'+'
 .positive_index:
 		ld		(hl),'+'
 .positive_index_skip:
@@ -890,8 +891,8 @@ func_ARG_JR_D_INC:
 		call	print_hexbyte_A_to_HL
 		ld		a,e
 		call	print_hexbyte_A_to_HL
-		ex		de,hl
-		ret
+		ld		(hl),'h'
+		jr		func_inc_ex_ret
 
 func_ARG_CC_P:
 		;and		00110000b	; not needed since the only case this is used

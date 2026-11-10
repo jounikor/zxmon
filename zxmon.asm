@@ -1,12 +1,11 @@
+;-----------------------------------------------------------------------------
+;
+; (c) 2026 Jouni 'Mr.Spiv' Korhonen
+;
+;
 ;
 ; This code is supposed to be ROMable.
 ;
-;
-;
-;
-;
-;
-
 
 		DEVICE	ZXSPECTRUM128
 		SLDOPT	COMMENT WPMEM, LOGPOINT, ASSERTION
@@ -81,11 +80,7 @@ init_sys_vars:
 		ld		(ix+VARS.key_rep_timer2),KEY_REP_TIMER2
 		ret
 
-
-
 s_copyright:	dc	"esxMON V0.01 (C) 20261109 Mr.Spiv/ScoopeX"
-
-		DISPLAY	"_gonna_exit_to_basic:", /H, _gonna_exit_to_basic
 
 		INCLUDE	"zxmon.inc"		
 		INCLUDE "string.asm"
