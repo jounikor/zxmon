@@ -18,9 +18,12 @@
 main:
 		; We reference the sysvars via IX. sysvars are 256 byte alogned and
 		; the size of the struct never exceeds 256 bytes.
-m:		ld		ix,sys_vars
+m:
+	IFDEF DOTCMD
+		push	hl
+	ENDIF
+		ld		ix,sys_vars
 		call	init_sys_vars
-
 		; Magic copyright and version greeting output
 		ld		hl,s_copyright
 		ld		de,AT_LOW_LEFT
@@ -29,9 +32,18 @@ m:		ld		ix,sys_vars
 		call	input_and_screen.scroll_up_whole_screen
 		ei
 
+	IFDEF DOTCMD
+		; Check for command line parameters in case of .command
+		pop		hl
+		ld		hl,fake
+		ld		a,h
+		or		l						; Clears C_flag
+		call	nz,parse_cmdline
+	ENDIF
 		; Main loop does scanning of keys, parsing the input buffer and 
 		; calling the appropriate command function. For "conveniense" the
 		; loop is synced to 50Hz..
+		db		$fe
 main_loop:
 		halt
 		; Read keys and update the input buffer line accordingly
@@ -56,13 +68,16 @@ main_loop:
 		call	input_and_screen.blink_cursor
 		bit		VARS_EXIT_F,(ix+VARS.flags)
 		jr z,	main_loop
-		ld		bc,0
+
+		xor		a
 _gonna_exit_to_basic:
+		ld		bc,0
 		ret
 
 ;
 ; Inputs:
 ;  IX = prt to system variables
+;
 init_sys_vars:
 		push	ix
 		pop		hl
@@ -79,6 +94,50 @@ init_sys_vars:
 		ld		(ix+VARS.key_rep_timer1),KEY_REP_TIMER1
 		ld		(ix+VARS.key_rep_timer2),KEY_REP_TIMER2
 		ret
+
+	IFDEF DOTCMD
+		; Check for command line parameters in case of .command
+parse_cmdline:
+		ex		de,hl
+		push	ix
+		pop		hl
+		push	hl
+		; inject 'r'ead command 
+		ld		(hl),'r'
+		inc		l
+		ld		(hl),' '
+		inc		l
+		ld		b,MAXX-3
+.copy_loop:
+		ld		a,(de)
+		and		a			; '\0'
+		jr		z,.cmd_end
+		cp		':'
+		jr		z,.cmd_end
+		bit		7,a
+		res		7,a
+		ld		(hl),a
+		inc		hl
+		jr		nz,.cmd_end
+		inc		de
+		djnz	.copy_loop
+.cmd_end:
+		xor		a
+		ld		(hl),a
+		; Fake enter
+		set		zxmon.BUF_ENTER_F,(ix+zxmon.VARS.input_buf_flags)
+		ld		(ix+zxmon.VARS.input_buf_end),l
+		ld		(ix+zxmon.VARS.input_cur_oldx),a
+		ld		(ix+zxmon.VARS.input_buf_pend),0
+		; Output for beatification..
+		pop		hl
+		ld		de,AT_LOW_LEFT
+		ld		b,0
+		jp		input_and_screen.print_at
+
+fake:
+		dc		"bin/ls c000"
+	ENDIF
 
 s_copyright:	dc	"esxMON V0.01 (C) 20261109 Mr.Spiv/ScoopeX"
 

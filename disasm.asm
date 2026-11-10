@@ -913,12 +913,13 @@ func_ARG_ALU:
 		db		'C'-32,'P'-32+64+128							; CP ..
 
 func_ARG_BLI_Y_Z_real:
-		and		00110011b
-		ld		l,a
-		rlca
-		rlca
-		or		l
-		and		00001111b		
+		ld		l,a	
+		and		00011000b
+		rrca
+		ld		h,a
+		ld		a,00000011b
+		and		l
+		or		h
 		call	print_opcode_str_index
 		db		ARG_LD,'I'-32+128					; a=4,b=0
 		db		'C'-32,'P'-32,'I'-32+128			; a=4,b=1
