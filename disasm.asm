@@ -38,10 +38,10 @@ ARG_ERR				equ		'@'-32
 ;  A > 0 and A contains error code.
 ;
 f_dis16
-		ld		b,16
+		ld		b,15
 		db		00010001b		; LD DE,nn
 f_dis8:
-		ld		b,8
+		ld		b,7
 		ld		a,(ix+zxmon.VARS.input_argc)
 		cp		2
 		jr c,	.mon_continue_addr

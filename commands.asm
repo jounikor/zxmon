@@ -316,8 +316,8 @@ s_help:
 		;        0         1         2.        3          4
 		;        0123456789012345678901234567890123456789012
 		dc		"COMMAND SYNTAX:"
-		dc		"m [<addr>]                   :show 8 lines"
-		dc		"mm [<addr>]                 :show 16 lines"
+		dc		"m [<addr>]                   :show 7 lines"
+		dc		"mm [<addr>]                 :show 15 lines"
 		dc		"p <addr> [<num>|'<str>] ..           :poke"
 		dc		"b <bank>                     :set RAM page"
 		dc		"ls [<dir>]               :show current dir"
@@ -325,8 +325,8 @@ s_help:
 		dc		"r <file> <addr> [<off> [<len>]] :read file"
 		dc		"w <file> <addr> <len>          :write file"
 		dc		"f <addr1> <addr2> <byte>         :fill mem"
-		dc		"d [<addr>]            :disassemble 8 lines"
-		dc		"dd [<addr>]          :disassemble 16 lines"
+		dc		"d [<addr>]            :disassemble 7 lines"
+		dc		"dd [<addr>]          :disassemble 15 lines"
 		dc		"c <addr>                  :call subroutine"
 		dc		"x                           :exit to BASIC"
 

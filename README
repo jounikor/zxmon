@@ -18,9 +18,9 @@ memory pointer to <addr>. This implies the next 'm' or 'mm' command
 without <addr> uses that previously defined <addr>.
 
 Supported commands:
-  m [<addr>]                       : show 8 lines of 8 byte blocks of RAM
+  m [<addr>]                       : show 7lines of 8 byte blocks of RAM
                                      starting from <addr>
-  mm [<addr>]                      : show 16 lines of 8 byte blocks of RAM
+  mm [<addr>]                      : show 15 lines of 8 byte blocks of RAM
                                      starting from <addr>
   p <addr> [<num>|'<str>] ..       : poke bytes(!) or strings separated by
                                    : white spaces into RAM starting from
@@ -35,9 +35,9 @@ Supported commands:
                                    : bytes
   f <addr1> <addr2> <byte>         : fill memory between <addr1> and <addr2>
                                    : with value <byte>
-  d [<addr>]                       : Disassemble 8 opcodes starting from
+  d [<addr>]                       : Disassemble 7 opcodes starting from
                                    : <addr>
-  dd [<addr>]                      : Disassemble 16 opcodes starting from
+  dd [<addr>]                      : Disassemble 15 opcodes starting from
                                    : <addr>
   c <addr>                         : CALL subroutine at <addr>
   x                                : exit to BASIC

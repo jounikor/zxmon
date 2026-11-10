@@ -26,10 +26,10 @@ PAGE_VAR	equ		0x5b5c
 ;  A > 0 and A contains error code.
 ;
 f_mon16
-		ld		b,16
+		ld		b,15
 		db		00010001b		; LD DE,nn
 f_mon8:
-		ld		b,8
+		ld		b,7
 		ld		a,(ix+zxmon.VARS.input_argc)
 		cp		2
 		jr c,	.mon_continue_addr
