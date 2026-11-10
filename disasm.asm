@@ -6,12 +6,11 @@
 		INCLUDE	"zxmon.inc"
 
 
-ARG_ROT_Y			equ		'/'-32
-ARG_R_Z				equ		'0'-32
-ARG_Y				equ		'1'-32
-ARG_INDEX_B			equ		'2'-32
-ARG_R_Y				equ		'3'-32
-ARG_JR				equ		'4'-32
+ARG_ROT_Y			equ		'0'-32
+ARG_R_Z				equ		'1'-32
+ARG_Y				equ		'2'-32
+ARG_INDEX_B			equ		'3'-32
+ARG_R_Y				equ		'4'-32
 ARG_JR_D_INC		equ		'5'-32
 ARG_HL				equ		'6'-32
 ARG_RP_P			equ		'7'-32
@@ -229,6 +228,7 @@ prefix_FD:
 		; This is DD/FD prefixed CB.. skip displacement and get new opcode
 		; This is just CD prfix.. get new opcode
 prefix_CB:
+		; C_flag = 0 here..
 		call	get_A_from_IX
 		; 76543210 opcode
 		; xxyyyzzz
@@ -241,21 +241,25 @@ prefix_CB:
 		; B = IX/IY index
 		; C = HL/IX/IY marker
 		;
-		and		11000000b
-		rlca
-		rlca
-		call	print_opcode_str_index
+		;and		11000000b
+		;rlca
+		;rlca
+		rla		; Shifts in 0
+		rla		; Shifts in bit 7
+		rla		; Shifts in bit 6
+		call	print_opcode_str_index8
 		db		ARG_ROT_Y+64,ARG_R_Z+128							; rot|y],r[z]
 		db		'B'-32,'I'-32,'T'-32+64,ARG_Y,','-32,ARG_R_Z+128	; BIT y,r[z]
 		db		'R'-32,'E'-32,'S'-32+64,ARG_Y,','-32,ARG_R_Z+128	; RES y,r[z]
 		db		'S'-32,'E'-32,'T'-32+64,ARG_Y,','-32,ARG_R_Z+128	; SET y,r[z]
 
 prefix_ED:
+		; C_flag = 0 when entering here..
 		call	get_A_from_IX
-		and		11000000b
-		rlca
-		rlca
-		call	jump_tab
+		rla		; shifts in 0
+		rla		; shifts in bit 7
+		rla		; shofts in bit 6
+		call	jump_tab8
 		db		prefix_ED_err-$
 		db		func_ED_misc-$
 		db		func_bli-$
@@ -309,10 +313,10 @@ prefix_ED_NEG:
 
 prefix_ED_RET:
 		and		00001000b
-		jr		z,.it_is_RETN
-		ld		a,1
+		;jr		z,.it_is_RETN
+		;ld		a,1
 .it_is_RETN:
-		call	print_opcode_str_index
+		call	print_opcode_str_index8_shift
 		db		'R'-32,'E'-32,'T'-32,'N'-32+128
 		db		'R'-32,'E'-32,'T'-32,'1'-32+128
 
@@ -320,7 +324,7 @@ prefix_ED_IM:
 		and		00011000b
 		call	print_opcode_str_index8_shift
 		db		'I'-32,'M'-32+64,'0'-32+128
-		db		'I'-32,'M'-32+64,'0'-32,'-'-32,'1'-32+128
+		db		'I'-32,'M'-32+64,'0'-32,'/'-32,'1'-32+128
 		db		'I'-32,'M'-32+64,'1'-32+128
 		db		'I'-32,'M'-32+64,'2'-32+128
 
@@ -364,8 +368,8 @@ normal_opcode:
 		db		opcode_11nnnnnn-$
 opcode_01nnnnnn:
 		call	get_opcode_to_A
-		and		00111111b
-		xor		00110110b
+		;and		00111111b
+		xor		01110110b
 		jr		z,opcode_halt
 		ld		a,1
 opcode_halt:
@@ -460,19 +464,15 @@ opcode_00nnnnnn:
 
 opcode_00_reljumps:
 		bit		5,a
-		jr		z,.ok_test
+		jr		z,.was_not_JR_CC
 		ld		a,4<<3			; == 00100000b
-.ok_test:
+.was_not_JR_CC:
 		call	print_opcode_str_index8_shift
 		db		'N'-32,'O'-32,'P'-32+128
 		db		'E'-32,'X'-32+64,'A'-32,'F'-32,','-32,'A'-32,'F'-32,"'"-32+128
 		db		'D'-32,'J'-32,'N'-32,'Z'-32+64,ARG_JR_D_INC+128			; DJNZ d
-		db		ARG_JR+64,ARG_JR_D_INC+128								; JR d
-		db		ARG_JR+64,ARG_CC_P,','-32,ARG_JR_D_INC+128				; JR cc,d
-		;db		ARG_JR+64,'N'-32,'Z'-32,','-32,ARG_JR_D_INC+128			; JR NZ,d
-		;db		ARG_JR+64,'Z'-32,','-32,ARG_JR_D_INC+128				; JR Z,d
-		;db		ARG_JR+64,'N'-32,'C'-32,','-32,ARG_JR_D_INC+128			; JR NC,d
-		;db		ARG_JR+64,'C'-32,','-32,ARG_JR_D_INC+128				; JR C,d
+		db		'J'-32,'R'-32+64,ARG_JR_D_INC+128								; JR d
+		db		'J'-32,'R'-32+64,ARG_CC_P,','-32,ARG_JR_D_INC+128				; JR cc,d
 
 opcode_00_ldadd16_imm:
 		and		00001000b
@@ -504,10 +504,10 @@ opcode_00_indirect_ld:
 
 opcode_00_incdec16:
 		and		00001000b
-		jr		z,opcode_00_inc16
-		ld		a,1
+		;jr		z,opcode_00_inc16
+		;ld		a,1
 opcode_00_inc16:
-		call	print_opcode_str_index
+		call	print_opcode_str_index8_shift
 		db		'I'-32,'N'-32,'C'-32+64,ARG_RP_P+128
 		db		'D'-32,'E'-32,'C'-32+64,ARG_RP_P+128
 
@@ -519,6 +519,7 @@ opcode_00_ld8_imm:
 		db		'I'-32,'N'-32,'C'-32+64,ARG_R_Y+128
 		db		'D'-32,'E'-32,'C'-32+64,ARG_R_Y+128
 		db		ARG_LD+64,ARG_R_Y,','-32,ARG_IMM8_INC+128
+		db		ARG_ERR+128
 
 opcode_00_misc_acc:
 		call	print_opcode_str_index8_shift
@@ -674,12 +675,12 @@ print_opcode_str_index:
 		push	af
 		and		00111111b
 		; Check space
-		cp		'/'-32
+		cp		'0'-32
 		jr		c,.no_arguments
 		; Check for arguments
 		cp		'A'-32
 		jr		nc,.no_arguments
-		sub		'/'-32
+		sub		'0'-32
 .no_space:
 		; Calls to subroutines must maintain HL and DE
 		push	hl
@@ -710,7 +711,6 @@ parse_arguments:
 		db		func_ARG_Y-$
 		db		func_ARG_INDEX_B-$
 		db		func_ARG_R_Y-$
-		db		func_ARG_JR-$
 		db		func_ARG_JR_D_INC-$
 		db		func_ARG_HL-$
 		db		func_ARG_R_P-$
@@ -739,21 +739,22 @@ func_ARG_HL:
 func_ARG_R_P:
 		add		00010000b
 		and		00110000b
-		rlca
-		rlca
-		rlca
-		rlca
-		call	print_opcode_str_index8
+		rrca
+		;rlca
+		;rlca
+		;rlca
+		call	print_opcode_str_index8_shift
 		db		'S'-32,'P'-32+128
 		db		'B'-32,'C'-32+128
 		db		'D'-32,'E'-32+128
 		db		ARG_HL+128
 
 func_ARG_ROT_Y:
-		and		0011100b
-		rrca
-		rrca
-		call	print_opcode_str_index
+		and		00111000b
+		;add		a,a
+		;rrca
+		;rrca
+		call	print_opcode_str_index8_shift
 		db		'R'-32,'L'-32,'C'-32+128
 		db		'R'-32,'R'-32,'C'-32+128
 		db		'R'-32,'L'-32+128
@@ -861,16 +862,6 @@ func_ARG_LD:
 		ld		(hl),'D'
 		jr		func_inc_ex_ret
 
-func_ARG_JR:
-		ex		de,hl
-		ld		(hl),'J'
-		inc		hl
-		ld		(hl),'R'
-func_inc_ex_ret:
-		inc		hl
-		ex		de,hl
-		ret
-
 func_ARG_BLI_Y_Z:
 		jr		func_ARG_BLI_Y_Z_real
 
@@ -892,11 +883,13 @@ func_ARG_JR_D_INC:
 		ld		a,e
 		call	print_hexbyte_A_to_HL
 		ld		(hl),'h'
-		jr		func_inc_ex_ret
+func_inc_ex_ret:
+		inc		hl
+		ex		de,hl
+		ret
 
 func_ARG_CC_P:
-		;and		00110000b	; not needed since the only case this is used
-		rrca					; upper 2 bits are 00b
+		and		00011000b
 func_ARG_CC:
 		call	print_opcode_str_index8_shift
 		db		'N'-32,'Z'-32+128
@@ -966,7 +959,7 @@ print_hexnibble_A_to_HL:
 		ret
 dis_z80_end:
 
-		DISPLAY	"esxMON size:", /D, dis_z80_end-dis_z80
+		DISPLAY	"disasm size:", /D, dis_z80_end-dis_z80
 
 
 		ENDMODULE

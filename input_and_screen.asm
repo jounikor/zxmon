@@ -7,10 +7,11 @@
 		DEVICE	ZXSPECTRUM128
 		SLDOPT 	COMMENT WPMEM, LOGPOINT, ASSERTION
 
-		MODULE	input_and_screen
-
 ; High byte of the screen location. If page 7 is used then this would be 0xc0.
 SCREEN_HIGH		equ		0x40
+
+		MODULE	input_and_screen
+
 
 ;-----------------------------------------------------------------------------
 ; Update one line length input buffer. The buffer allows simple editing and
