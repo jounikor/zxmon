@@ -398,10 +398,9 @@ save_registers:
 		exx
 		ld		hl,(zxmon.sys_regs.r_sp)
 		ld		sp,hl
-		dec		hl
-		dec		hl
+		inc		hl
+		inc		hl
 		ld		(zxmon.sys_regs.r_sp),hl
-		ld		hl,(zxmon.sys_regs.r_hl)
 		ei
 		ret
 
