@@ -11,7 +11,6 @@
 
 		INCLUDE	"zxmon.inc"
 
-
 PAGE_VAR	equ		0x5b5c
 
 ;-----------------------------------------------------------------------------
@@ -309,7 +308,7 @@ f_bank:
 		cp		8
 		jr c,	.value_in_bounds
 
-		ld		a,CMD_EVALUE
+		ld		a,CMD_EBANK
 		ret
 		;
 .value_in_bounds:
@@ -358,26 +357,244 @@ f_call:
 		ld		(ix+zxmon.VARS.mem_addr+0),l
 		ld		(ix+zxmon.VARS.mem_addr+1),h
 
+		ld		de,.return
 		push	ix
-		push	hl
 		push	de
-		push	bc
-		push	af
+		push	hl
 
-		call	.save_our_souls
+		; Load register file..
+		call	load_registers
+		ret
+.return:
+		call	save_registers
 		; restore
-
-		pop		af
-		pop		bc
-		pop		de
-		pop		hl
 		pop		ix
-
 		xor		a
 		ret
 
-.save_our_souls:
-		jp		(hl)
+;
+; Inputs:
+;  IX = ptr to sys_vars
+;  Stack -2 = original IX
+;
+;
+save_registers:
+		di
+		ld		(zxmon.sys_regs.r_sp),sp
+		ld		sp,zxmon.sys_regs_end
+		push	af
+		push	bc
+		push	de
+		push	hl
+		push	ix
+		push	iy
+		ex		af,af'
+		push	af
+		ex		af,af'
+		exx
+		push	bc
+		push	de
+		push	hl
+		exx
+		ld		hl,(zxmon.sys_regs.r_sp)
+		ld		sp,hl
+		dec		hl
+		dec		hl
+		ld		(zxmon.sys_regs.r_sp),hl
+		ld		hl,(zxmon.sys_regs.r_hl)
+		ei
+		ret
 
+load_registers:
+		di
+		ld		(zxmon.sys_regs.r_sp_save),sp
+		ld		sp,zxmon.sys_regs.r_hl_p
+		exx
+		pop		hl
+		pop		de
+		pop		bc
+		exx
+		ex		af,af'
+		pop		af
+		ex		af,af'
+		pop		iy
+		pop		ix
+		pop		hl
+		pop		de
+		pop		bc
+		pop		af
+		ld		sp,(zxmon.sys_regs.r_sp_save)
+		ei
+		ret
+
+
+
+;-----------------------------------------------------------------------------
+;
+; Dump current registers' values
+;
+; Input:
+;  IX = ptr to sysvars, which contains tokenized ARGV[]..
+;
+; Returns:
+;  A = 0 when no error.
+;  A > 0 and A contains error code.
+;
+f_registers:
+		ld		a,(ix+zxmon.VARS.input_argc)
+		cp		1
+		jr		z,.display_registers
+		cp		3
+		jr nc,	.enough_parameters
+		ld		a,CMD_ENUMPARAMS
+		ret
+		;
+.enough_parameters:
+		; Find which register to change..
+		ld		d,ixh
+		ld		e,(ix+zxmon.VARS.input_argv+1)
+		ld		a,(de)
+		ld		b,a
+		inc		de
+		ld		a,(de)
+		ld		c,a
+		inc		de
+		ld		a,(de)
+		and		a
+		jr		nz,.not_end_of_str
+		ld		a,' '
+.not_end_of_str:
+		or		0x80
+		ld		d,a
+		ld		hl,s_registers
+		ld		e,0
+.find_register_pair_loop:
+		dec		e
+		dec		e
+		; BCD contains user input for a register
+		; D also has bit 7 set
+		ld		a,(hl)
+		inc		hl
+		and		a
+		jr		nz,.not_end_yet
+		ld		a,CMD_EVALUE
+		ret
+.not_end_yet:
+		cp		b
+		jr		nz,.find_str_end2
+		ld		a,(hl)
+		inc		hl
+		cp		c
+		jr		nz,.find_str_end1
+		ld		a,(hl)
+		inc		hl
+		cp		d
+		jr		z,.found_register_pair
+		jr		.find_register_pair_loop
+.find_str_end2:
+		inc		hl
+.find_str_end1:
+		inc		hl
+		jr		.find_register_pair_loop
+.found_register_pair
+		ld		d,-1
+		ld		hl,zxmon.sys_regs_end
+		add		hl,de
+		push	hl
+
+		; get value to reg
+		ld		d,ixh
+		ld		e,(ix+zxmon.VARS.input_argv+2)
+		call	zxmon.string.str_to_number
+		pop		de
+		jr nc,	.num_conversion_ok
+.num_conversion_failed:
+		ld		a,CMD_ENUMCONV
+		ret
+		; 
+.num_conversion_ok:
+		ex		de,hl
+		ld		(hl),e
+		inc		hl
+		ld		(hl),d
+		xor		a
+		ret
+		;
+.display_registers:
+		push	ix
+		push	ix
+		pop		hl
+		ld		l,zxmon.VARS.output_buf
+		ld		de,s_registers
+		ld		bc,0x0403
+.registers_print_loop:
+		push	bc
+		push	hl
+.copy_string:
+		ld		a,(de)
+		inc		de
+		add		a,a
+		push	af
+		rrca
+		ld		(hl),a
+		inc		hl
+		pop		af
+		jr		nc,	.copy_string
+		;
+
+		ld		(hl),' '
+		inc		hl
+
+		push	de
+		dec		ix
+		ld		d,(ix+0)
+		dec		ix
+		ld		e,(ix+0)
+		call	zxmon.string.word_in_DE_to_ascii
+		ld		(hl),' '
+		inc		hl
+		ld		(hl),' '
+		inc		hl
+		pop		de
+		dec		c
+		jr		nz,.copy_string
+		ld		(hl),0
+		;
+		pop		hl
+		; DE = ptr to next in s_registers
+		; HL = ptr to start of output buffer
+
+		push	hl
+		push	de
+		ld		b,0
+		ld		de,AT_LOW_LEFT
+		call	zxmon.input_and_screen.print_at
+		call	zxmon.input_and_screen.scroll_up_whole_screen
+		pop		de
+		pop		hl
+		pop		bc
+		ld		c,3
+		djnz	.registers_print_loop:
+
+		pop		ix
+		xor		a
+		ret
+
+s_registers:
+		;        0   0         1         2
+		;        0   4         4         4 
+		dc		"af "
+		dc		"bc "
+		dc		"de "
+		dc		"hl "
+		dc		"ix "
+		dc		"iy "
+		dc		"af'"
+		dc		"bc'"
+		dc		"de'"
+		dc		"hl'"
+		dc		"sp "
+		dc		"pc "
+		db		0
 
 		ENDMODULE

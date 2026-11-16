@@ -28,10 +28,10 @@ Supported commands:
   b <bank>                         : set RAM page at $C000 to <bank>
   ls                               : show content of the current working dir
   cd <dir>                         : change current working dir
-  r <file> <addr> [<off> [<len>]]  : read <file> into RAM <addr> optionally
+  l <file> <addr> [<off> [<len>]]  : load <file> into RAM <addr> optionally
                                    : at offset <off> (default 0) and optinally
 								   : max <len> (default entire file)
-  w <file> <addr> <len>            : write <file> from RAM <addr> and <len>
+  s <file> <addr> <len>            : save <file> from RAM <addr> and <len>
                                    : bytes
   f <addr1> <addr2> <byte>         : fill memory between <addr1> and <addr2>
                                    : with value <byte>
@@ -40,6 +40,7 @@ Supported commands:
   dd [<addr>]                      : Disassemble 15 opcodes starting from
                                    : <addr>
   c <addr>                         : CALL subroutine at <addr>
+  r                                : dump registers
   x                                : exit to BASIC
   h                                : print help page
 

@@ -35,7 +35,45 @@ CMD_ENUMCONV        equ     3       ; hex/dec number conversion failed
 CMD_EATARI          equ     4
 CMD_EC64            equ     5
 CMD_EESXDOS			equ		6
-CMD_EVALUE			equ		7		; Input value is invalid / out of bounds
+CMD_EBANK			equ		7
+CMD_EVALUE			equ		8		; Input value is invalid / out of bounds
+
+
+		STRUCT	REGS
+r_sp_save			dw	0
+r_pc				dw	0
+r_sp				dw	0
+r_hl_p				ds	0
+r_l_p				db	0
+r_h_p				db	0
+r_de_p				ds	0	;
+r_e_p				db	0
+r_d_p				db	0
+r_bc_p				ds	0
+r_c_p				db	0
+r_b_p				db	0
+r_af_p				ds	0
+r_a_p				db	0
+r_f_p				db	0
+r_iy				dw	0	;
+r_ix				dw	0
+r_hl				ds	0
+r_l					db	0
+r_h					db	0
+r_de				ds	0	;
+r_e					db	0
+r_d					db	0
+r_bc				ds	0
+r_c					db	0
+r_b					db	0
+r_af				ds	0
+r_a					db	0
+r_f					db	0
+		ENDS
+
+
+
+
 
 		STRUCT	VARS
 					; these two buffer must fit into 256 bytes, and indexing
@@ -58,8 +96,8 @@ key_rep_timer1		db	KEY_REP_TIMER1		; First time threshold to start key repeat
 key_rep_timer2		db	KEY_REP_TIMER2		; Time between following key repeats
 cmd_func			dw	0
 mem_addr			dw	0
+hl_addr				dw	0
 mem_bank			db	0
-cmd_len				db	0
 file_handle			db	0
 file_errno			db	0
 ; Note: dir_entry, stat_entry and ARGV all are overlaid using the memory area

@@ -30,8 +30,6 @@
 ;
 ;
 
-    DISPLAY	"ls(): ",/H,f_ls
-
 f_ls:
         push    ix
         pop     hl
@@ -54,9 +52,12 @@ f_ls:
 .current_path:
 		ld      a,CUR_DRIVE
         ld      b,FA_OPEN_EX
+
+	IFDEF DOTCMD
+	ELSE
         push    hl
         pop     ix
-
+	ENDIF
         rst     8
         db      F_OPENDIR
         pop     ix
@@ -66,12 +67,18 @@ f_ls:
 .ls_loop:
         push    ix
         ld      a,(ix+VARS.file_handle)
+	IFDEF DOTCMD
+		pop		hl
+		push	hl
+        ld      l,VARS.dir_entry
+		push	hl
+	ELSE
         ld      ixl,VARS.dir_entry
 		push	ix
-
+	ENDIF
         rst     8
         db      F_READDIR
-        pop     hl
+		pop		hl
 		pop		ix
         jp c,   esxdos_error
 
@@ -106,8 +113,6 @@ f_ls:
 ;   HL=pointer to asciiz dir/path
 ;
 
-   DISPLAY	"cd(): ",/H,f_cd
-
 f_cd:
         push    ix
 		pop		hl
@@ -120,8 +125,11 @@ f_cd:
 		; given as NIL terminate empty string. ARGV[ARGC] always points at NIL.
 		;
 		ld		l,(ix+VARS.input_argv+1)
+	IFDEF DOTCMD
+	ELSE
 		push	hl
 		pop		ix
+	ENDIF
 		ld      a,CUR_DRIVE
         rst     8
         db      F_CHDIR
@@ -181,8 +189,6 @@ f_cd:
 ;
 ;
 
-	DISPLAY	"f_read()",/H,f_read
-
 f_read:
 		ld		(ix+VARS.file_errno),EOK
 		ld		a,(ix+zxmon.VARS.input_argc)
@@ -199,8 +205,11 @@ f_read:
 		; ESXDOS expects IX instead of HL..
 		push	hl
 		ld		l,(ix+zxmon.VARS.input_argv+1)
+	IFDEF DOTCMD
+	ELSE
 		push	hl
 		pop		ix
+	ENDIF
 		ld      a,CUR_DRIVE
         ld      b,FA_OPEN_EX|FA_READ
         rst     8
@@ -289,8 +298,11 @@ f_read:
 		; BC = bytes to read
 		; HL = memory address
 		push	ix
+	IFDEF DOTCMD
+	ELSE
 		push	hl
 		pop		ix
+	ENDIF
 		rst		8
 		db		F_READ
 		pop		ix
@@ -342,8 +354,6 @@ f_read:
 ;           File pointer gets updated.
 ;
 
-	DISPLAY	"f_write()",/H,f_write
-
 f_write:
 		ld		(ix+VARS.file_errno),EOK
 		ld		a,(ix+zxmon.VARS.input_argc)
@@ -360,8 +370,11 @@ f_write:
 		; ESXDOS expects IX instead of HL..
 		push	hl
 		ld		l,(ix+zxmon.VARS.input_argv+1)
+	IFDEF DOTCMD
+	ELSE
 		push	hl
 		pop		ix
+	ENDIF
 		ld      a,CUR_DRIVE
         ld      b,FA_CREATE_AL|FA_WRITE
         rst     8
@@ -404,7 +417,6 @@ f_write:
 		jr nc,	.file_size_ok
 
 		ex		de,hl
-
 		or		a
 		sbc		hl,de
 		ex		de,hl
@@ -417,8 +429,11 @@ f_write:
 		; BC = bytes to read
 		; HL = memory address
 		push	ix
+	IFDEF DOTCMD
+	ELSE
 		push	hl
 		pop		ix
+	ENDIF
 		rst		8
 		db		F_WRITE
 		pop		ix
@@ -511,9 +526,6 @@ esxdos_skip_close_and_exit:
 ; up to 10 chars file length (left justified) / <dir>
 ; 10 chars date
 ;
-
-	DISPLAY	"prep_dir_entry(): ",/H,prep_dir_entry
-	DISPLAY	"file_size: ",/H,file_size
 
 prep_dir_entry:
 		ld		d,ixh

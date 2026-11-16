@@ -5,7 +5,7 @@ SRC = zxmon.asm
 MAP = $(EXEC).map
 SLD = $(EXEC).sld
 #OBJ = $(SRC:.cc=.o)
-ASMFLAGS = --sld=$(SLD) --sym=$(MAP) --fullpath -DDOTCMD
+ASMFLAGS = --sld=$(SLD) --sym=$(MAP) --fullpath -DDOTCMD -DREGCMD
 
 all: $(EXEC)
 

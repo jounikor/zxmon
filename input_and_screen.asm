@@ -602,7 +602,7 @@ scroll_up:
 ;  D = y [0..31]
 ;  E = x [0..41]
 ;  B = # of chars to print
-;  HL = NUL terminated string
+;  HL = NUL or bit 7 terminated string
 ;
 ; Returns:
 ;  HL = next position in input string
@@ -618,10 +618,10 @@ print_at:
 .print_loop:
 		ld		a,(hl)
 		inc		hl
-		and		a
+		add		a,a
 		ret		z
 		push	af
-		and		01111111b
+		rrca
 		push	hl
 		push	bc
 		push	de
@@ -632,7 +632,7 @@ print_at:
 		pop		bc
 		pop		hl
 		pop		af
-		ret		m
+		ret		c
 		inc		e
 
 		djnz	.print_loop

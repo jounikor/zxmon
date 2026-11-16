@@ -181,9 +181,14 @@ command_error:
 		;
 		ld		hl,s_err_page
 		jr		f_error_print_hl
-
+		;
 .not_bank:
-
+		dec		a
+		jr nz,	.not_evalue
+		;
+		ld		hl,s_err_value
+		jr		f_error_print_hl
+.not_evalue:
 
         ; generic syntax error
 f_error:
@@ -272,14 +277,17 @@ s_command_array:
         db      3,"cd",0
         dw      zxmon.fileio.f_cd
 
-		db		2,"r",0
+		db		2,"l",0
 		dw		zxmon.fileio.f_read
 
-		db		2,"w",0
+		db		2,"s",0
 		dw		zxmon.fileio.f_write
 
 		db		2,"c",0
 		dw		zxmon.memmon.f_call
+
+		db		2,"r",0
+		dw		zxmon.memmon.f_registers
 
 		db		2,"x",0
 		dw		f_exit
@@ -310,9 +318,11 @@ s_err_user_abort:
 		dc		"Command aborted"
 s_err_page:
 		dc		"Invalid RAM page"
+s_err_value:
+		dc		"Invalid value or out of bounds"
 
 s_help:
-		db		14
+		db		15
 		;        0         1         2.        3          4
 		;        0123456789012345678901234567890123456789012
 		dc		"COMMAND SYNTAX:"
@@ -322,12 +332,13 @@ s_help:
 		dc		"b <bank>                     :set RAM page"
 		dc		"ls [<dir>]               :show current dir"
 		dc		"cd <dir>               :change current dir"
-		dc		"r <file> <addr> [<off> [<len>]] :read file"
-		dc		"w <file> <addr> <len>          :write file"
+		dc		"l <file> <addr> [<off> [<len>]] :load file"
+		dc		"s <file> <addr> <len>           :save file"
 		dc		"f <addr1> <addr2> <byte>         :fill mem"
 		dc		"d [<addr>]            :disassemble 7 lines"
 		dc		"dd [<addr>]          :disassemble 15 lines"
 		dc		"c <addr>                  :call subroutine"
+		dc		"r                          :dump registers"
 		dc		"x                           :exit to BASIC"
 
 
