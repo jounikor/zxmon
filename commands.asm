@@ -338,7 +338,7 @@ s_help:
 		dc		"d [<addr>]            :disassemble 7 lines"
 		dc		"dd [<addr>]          :disassemble 15 lines"
 		dc		"c <addr>                  :call subroutine"
-		dc		"r                          :dump registers"
+		dc		"r [<reg> <num>]    :dump regs or set a reg"
 		dc		"x                           :exit to BASIC"
 
 

@@ -40,7 +40,7 @@ Supported commands:
   dd [<addr>]                      : Disassemble 15 opcodes starting from
                                    : <addr>
   c <addr>                         : CALL subroutine at <addr>
-  r                                : dump registers
+  r [<16-bit reg> <value>          : dump registers or set a register
   x                                : exit to BASIC
   h                                : print help page
 
