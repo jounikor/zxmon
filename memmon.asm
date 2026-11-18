@@ -398,6 +398,7 @@ save_registers:
 		exx
 		ld		hl,(zxmon.sys_regs.r_sp)
 		ld		sp,hl
+		; for the saved SP adjust return address from stack..
 		inc		hl
 		inc		hl
 		ld		(zxmon.sys_regs.r_sp),hl

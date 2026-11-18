@@ -368,9 +368,10 @@ normal_opcode:
 		db		opcode_11nnnnnn-$
 opcode_01nnnnnn:
 		call	get_opcode_to_A
-		;and		00111111b
 		xor		01110110b
 		jr		z,opcode_halt
+		; this command is eligible for undocumented DD/FD prefixed opcodes
+		set		7,c
 		ld		a,1
 opcode_halt:
 		call	print_opcode_str_index
@@ -730,8 +731,7 @@ func_ARG_ERR:
 
 func_ARG_HL:
 		ld		a,c
-		ld		c,0
-		call	print_opcode_str_index
+		call	print_opcode_str_index8
 		db		'H'-32,'L'-32+128
 		db		'I'-32,'Y'-32+128
 		db		'I'-32,'X'-32+128
@@ -740,9 +740,6 @@ func_ARG_R_P:
 		add		00010000b
 		and		00110000b
 		rrca
-		;rlca
-		;rlca
-		;rlca
 		call	print_opcode_str_index8_shift
 		db		'S'-32,'P'-32+128
 		db		'B'-32,'C'-32+128
@@ -788,6 +785,13 @@ cont_imm8_no_inc:
 		jr		func_inc_ex_ret
 
 func_ARG_R_Y:
+		push	af
+		and		00000111b
+		cp		00000110b
+		jr		nz,.can_be_undocumented
+		res		7,c
+.can_be_undocumented:
+		pop		af
 		rrca
 		rrca
 		rrca
@@ -798,9 +802,12 @@ func_ARG_R_Z:
 		jr		z,.check_IX_IY
 		cp		5
 		jr		c,.not_H_or_L
-		
+		bit		7,c
+		jr		z,.not_eligble_undocumented
+.undocumented:
 		add		a,c
 		add		a,c
+.not_eligble_undocumented:
 		cp		7
 		jr		c,.no_DD_or_FD
 		dec		ix			; we have increased IX earlier
@@ -821,8 +828,9 @@ func_ARG_R_Z:
 		db		ARG_HL,'L'-32+128				; 10 -> 'I'-32,'X'-32,'L'-32+128
 
 .check_IX_IY:
+		res		7,c								; Undo undocumented thing
 		ld		a,c
-		call	print_opcode_str_index
+		call	print_opcode_str_index8
 		db		'('-32,ARG_HL,')'-32+128
 		db		'('-32,ARG_HL,ARG_INDEX_B,')'-32+128
 		db		'('-32,ARG_HL,ARG_INDEX_B,')'-32+128
@@ -853,7 +861,10 @@ func_ARG_INDEX_B:
 		inc		hl
 		call	print_hexbyte_A_to_HL
 		ld		(hl),'h'
-		jr		func_inc_ex_ret
+func_inc_ex_ret:
+		inc		hl
+		ex		de,hl
+		ret
 		
 func_ARG_LD:
 		ex		de,hl
@@ -883,10 +894,7 @@ func_ARG_JR_D_INC:
 		ld		a,e
 		call	print_hexbyte_A_to_HL
 		ld		(hl),'h'
-func_inc_ex_ret:
-		inc		hl
-		ex		de,hl
-		ret
+		jr		func_inc_ex_ret
 
 func_ARG_CC_P:
 		and		00011000b

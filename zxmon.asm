@@ -22,10 +22,8 @@
 zxmon_sta:
 main:
 	IFDEF REGCMD
-		push	hl
 		ld		(zxmon.sys_regs.r_sp_save),sp
 		call	zxmon.memmon.save_registers
-		pop		hl
 	ENDIF
 		; We reference the sysvars via IX. sysvars are 256 byte alogned and
 		; the size of the struct never exceeds 256 bytes.
@@ -33,8 +31,6 @@ main:
 		ld		ix,sys_vars
 
 		call	init_sys_vars
-		ld		(ix+zxmon.VARS.hl_addr+0),l
-		ld		(ix+zxmon.VARS.hl_addr+1),h
 
 		; Magic copyright and version greeting output
 		ld		hl,s_copyright
@@ -46,8 +42,7 @@ main:
 
 	IFDEF DOTCMD
 		; Check for command line parameters in case of .command
-		ld		l,(ix+zxmon.VARS.hl_addr+0)
-		ld		h,(ix+zxmon.VARS.hl_addr+1)
+		ld		hl,(zxmon.sys_regs.r_hl)
 		ld		a,h
 		or		l						; Clears C_flag
 		call	nz,parse_cmdline
@@ -90,7 +85,6 @@ main_loop:
 ;  IX = prt to system variables
 ;
 init_sys_vars:
-		push	hl
 		push	ix
 		pop		hl
 
@@ -106,7 +100,6 @@ init_sys_vars:
 		ld		(ix+VARS.input_cur_timer),BLINK_T
 		ld		(ix+VARS.key_rep_timer1),KEY_REP_TIMER1
 		ld		(ix+VARS.key_rep_timer2),KEY_REP_TIMER2
-		pop		hl
 		ret
 
 	IFDEF DOTCMD
