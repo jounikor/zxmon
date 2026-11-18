@@ -22,6 +22,8 @@ Worth noting that 'r'egister command does not handle SP properly. When
 'c'alling a subroutine the SP is loaded according the current SP the
 esxMON uses itself. PC is completely ignored.
 
+CAPS or Symbol shift act as a break key for directory listings. 
+
 The .command syntax in BASIC is the following:
 .esxmon [<file> <addr> [<off> [<len>]]
 
