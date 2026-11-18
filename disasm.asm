@@ -428,7 +428,7 @@ opcode_11_pop:
 		db		'P'-32,'O'-32,'P'-32+64,ARG_HL+128				; POP HL/IX/IY
 		db		'J'-32,'P'-32+64,'('-32,ARG_HL,')'-32+128		; JP (HL/IX/IY)
 		db		'P'-32,'O'-32,'P'-32+64,'A'-32,'F'-32+128		; POP AF
-		db		ARG_LD+64,'S'-32,'P'-32,ARG_HL+128				; LD SP,HL/IX/IY
+		db		ARG_LD+64,'S'-32,'P'-32,','-32,ARG_HL+128				; LD SP,HL/IX/IY
 
 opcode_11_jp:
 		call	print_opcode_str_index8_shift
@@ -436,7 +436,7 @@ opcode_11_jp:
 		db		ARG_ERR+128										; CB prefix
 		db		'O'-32,'U'-32,'T'-32+64,'('-32,ARG_IMM8_INC,')'-32,','-32,'A'-32+128
 		db		'I'-32,'N'-32+64,'A'-32,'('-32,ARG_IMM8_INC,')'-32+128
-		db		'E'-32,'X'-32+64,'('-32,'S'-32,'P'-32,')'-32,ARG_HL+128
+		db		'E'-32,'X'-32+64,'('-32,'S'-32,'P'-32,')'-32,','-32,ARG_HL+128
 		db		'E'-32,'X'-32+64,'D'-32,'E'-32,','-32,'H'-32,'L'-32+128
 		db		'D'-32,'I'-32+128
 		db		'E'-32,'I'-32+128		
@@ -499,7 +499,7 @@ opcode_00_indirect_ld:
 		db		ARG_LD+64,'('-32,'D'-32,'E'-32,')'-32,','-32,'A'-32+128
 		db		ARG_LD+64,'A'-32,','-32,'('-32,'D'-32,'E'-32,')'-32+128
 		db		ARG_LD+64,'('-32,ARG_IMM16_INC,')'-32,','-32,ARG_HL+128
-		db		ARG_LD+64,ARG_HL,'('-32,ARG_IMM16_INC,')'-32+128
+		db		ARG_LD+64,ARG_HL,','-32,'('-32,ARG_IMM16_INC,')'-32+128
 		db		ARG_LD+64,'('-32,ARG_IMM16_INC,')'-32,','-32,'A'-32+128
 		db		ARG_LD+64,'A'-32,','-32,'('-32,ARG_IMM8_INC,')'-32+128
 

@@ -18,6 +18,10 @@ esxMON support simple line editing. You can delete characters, and move
 left or right in the input line. Editing is always in 'insert' mode. The
 input line is maximum 42 characters including the cursor.
 
+Worth noting that 'r'egister command does not handle SP properly. When
+'c'alling a subroutine the SP is loaded according the current SP the
+esxMON uses itself. PC is completely ignored.
+
 The .command syntax in BASIC is the following:
 .esxmon [<file> <addr> [<off> [<len>]]
 
