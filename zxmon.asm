@@ -144,7 +144,7 @@ fake:
 		dc		"bin/ls c000"
 	ENDIF
 
-s_copyright:	dc	"esxMON V0.03 (C) 20261118 Mr.Spiv/ScoopeX"
+s_copyright:	dc	"esxMON V0.03 (C) 20261119 Mr.Spiv/ScoopeX"
 
 		INCLUDE	"zxmon.inc"		
 		INCLUDE "string.asm"
@@ -155,6 +155,7 @@ s_copyright:	dc	"esxMON V0.03 (C) 20261118 Mr.Spiv/ScoopeX"
 		INCLUDE	"disasm.asm"
 		INCLUDE	"input_and_screen.asm"
 		ds		zxmon.REGS
+		ALIGN	512
 zxmon_end:
 
 ; System variables must be 256 bytes aligned.
@@ -168,9 +169,9 @@ sys_regs_end:
 	ENDIF
 sys_vars:	zxmon.VARS
 
-		SAVETAP	"zxmon.tap",main
+		;SAVETAP	"zxmon.tap",main
 		SAVESNA	"zxmon.sna",main
-		SAVEBIN	"dot_esxmon",zxmon_sta,zxmon_end-zxmon_sta
+		SAVEBIN	"esxmon",zxmon_sta,zxmon_end-zxmon_sta
 		ENDMODULE
 
 

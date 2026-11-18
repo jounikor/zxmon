@@ -518,12 +518,12 @@ esxdos_skip_close_and_exit:
 ;   <word>  time
 ;   <dword>  filesize
 ;
-; 0         1         2 2       3  3    3 444
-; 0         0         0 2       0  3    8 012
-; ---- filename1234.txt 01.01.1980 0123456789
-;                                       <dir>
+; 0         1         2 2       3  3    3 44
+; 0         0         0 2       0  3    8 01
+; ---- filename1234.txt 01.01.1980 012345678
+;                                      <dir>
 ; up to 16 chars filename
-; up to 10 chars file length (left justified) / <dir>
+; up to 9 chars file length (left justified) / <dir>
 ; 10 chars date
 ;
 
@@ -586,6 +586,16 @@ prep_dir_entry:
 		inc		e
 		ld		(de),a
 		djnz	.name_loop
+		ld		a,(hl)
+		and		a
+		jr		z,.find_name_end
+		ld		a,'~'
+		ld		(de),a
+.find_name_end:
+		ld		a,(hl)
+		and		a
+		inc		hl
+		jr		nz,.find_name_end
 .name_loop_exit:
 		; File date
 		ld		e,VARS.output_buf+22
@@ -668,11 +678,16 @@ file_size:
 		pop		de
 		; HL = ptr to converted string
 		;  A = string length
+		cp		10
+		jr		c,.length_within_bounds
+		ld		a,9
+.length_within_bounds:
 		ld		c,a
 prep_dir_done:
 		ldir
 		pop		hl
 		ret
+
 
 ;-----------------------------------------------------------------------------
 ;

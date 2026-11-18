@@ -313,8 +313,6 @@ prefix_ED_NEG:
 
 prefix_ED_RET:
 		and		00001000b
-		;jr		z,.it_is_RETN
-		;ld		a,1
 .it_is_RETN:
 		call	print_opcode_str_index8_shift
 		db		'R'-32,'E'-32,'T'-32,'N'-32+128
@@ -361,7 +359,7 @@ normal_opcode:
 		rlca
 		rlca
 		and		00000011b
-		call	jump_tab8
+		call	jump_tab
 		db		opcode_00nnnnnn-$
 		db		opcode_01nnnnnn-$
 		db		opcode_10nnnnnn-$
@@ -404,8 +402,9 @@ opcode_11_alu_ok:
 
 opcode_11_misc:
 		ld		l,a
-		ld		a,c
-		and		a
+		ld		a,c		; FIX
+		;and		a
+		and		00000011b
 		jr		z,.IX_IY_ok
 		dec		ix
 .IX_IY_ok:
@@ -482,8 +481,9 @@ opcode_00_ldadd16_imm:
 .ld16imm:
 		; check if there was DD/FD prefix.. if so fix IX
 		ld		l,a
-		ld		a,c
-		and		a
+		ld		a,c		; FIX
+		;and		a
+		and		00000011b
 		jr		z,.no_DD_or_FD_prefix
 		dec		ix
 .no_DD_or_FD_prefix:
@@ -505,8 +505,6 @@ opcode_00_indirect_ld:
 
 opcode_00_incdec16:
 		and		00001000b
-		;jr		z,opcode_00_inc16
-		;ld		a,1
 opcode_00_inc16:
 		call	print_opcode_str_index8_shift
 		db		'I'-32,'N'-32,'C'-32+64,ARG_RP_P+128
@@ -730,11 +728,13 @@ func_ARG_ERR:
 		jp		prefix_ED_err
 
 func_ARG_HL:
-		ld		a,c
+		ld		a,00000011b
+		and		c
 		call	print_opcode_str_index8
 		db		'H'-32,'L'-32+128
 		db		'I'-32,'Y'-32+128
 		db		'I'-32,'X'-32+128
+		db		ARG_ERR+128
 
 func_ARG_R_P:
 		add		00010000b
@@ -748,9 +748,6 @@ func_ARG_R_P:
 
 func_ARG_ROT_Y:
 		and		00111000b
-		;add		a,a
-		;rrca
-		;rrca
 		call	print_opcode_str_index8_shift
 		db		'R'-32,'L'-32,'C'-32+128
 		db		'R'-32,'R'-32,'C'-32+128
