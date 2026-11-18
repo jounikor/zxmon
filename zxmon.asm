@@ -145,7 +145,7 @@ fake:
 		dc		"bin/ls c000"
 	ENDIF
 
-s_copyright:	dc	"esxMON V0.01 (C) 20261109 Mr.Spiv/ScoopeX"
+s_copyright:	dc	"esxMON V0.02 (C) 20261118 Mr.Spiv/ScoopeX"
 
 		INCLUDE	"zxmon.inc"		
 		INCLUDE "string.asm"
