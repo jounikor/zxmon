@@ -5,6 +5,9 @@ variables outside stack or IX indexed 256 bytes "sysvar" area. However,
 the 'r'egisters command somewhat broke this as some register values are
 accessed directly to RAM, not via IX.. bummer..
 
+Testing has been light at best so for bug reports email to:
+  jouni.korhonen at iki.fi
+
 Numbers are by default in hexdecimal. If they are preceded with _ in the
 input line they are treated as decimal. 
 Memory poke command also understands ASCII strings. A string is opened
