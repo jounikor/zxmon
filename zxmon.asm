@@ -27,7 +27,6 @@ main:
 	ENDIF
 		; We reference the sysvars via IX. sysvars are 256 byte alogned and
 		; the size of the struct never exceeds 256 bytes.
-		push	ix
 		ld		ix,sys_vars
 
 		call	init_sys_vars
@@ -145,7 +144,7 @@ fake:
 		dc		"bin/ls c000"
 	ENDIF
 
-s_copyright:	dc	"esxMON V0.02 (C) 20261118 Mr.Spiv/ScoopeX"
+s_copyright:	dc	"esxMON V0.03 (C) 20261118 Mr.Spiv/ScoopeX"
 
 		INCLUDE	"zxmon.inc"		
 		INCLUDE "string.asm"
@@ -155,6 +154,7 @@ s_copyright:	dc	"esxMON V0.02 (C) 20261118 Mr.Spiv/ScoopeX"
 		INCLUDE	"fileio.asm"
 		INCLUDE	"disasm.asm"
 		INCLUDE	"input_and_screen.asm"
+		ds		zxmon.REGS
 zxmon_end:
 
 ; System variables must be 256 bytes aligned.

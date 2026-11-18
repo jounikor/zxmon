@@ -1,4 +1,4 @@
-Work-in-progress version 0.2 of esxMON memory monitor and Z80 disassembler
+Work-in-progress version 0.3 of esxMON memory monitor and Z80 disassembler
 for ZX Spectrum with ESXDOS 0.8.9 or better(?) supported devices. One of
 the design(?) principles is to keep the code ROMmable i.e. no SMC, and no
 variables outside stack or IX indexed 256 bytes "sysvar" area. However,
