@@ -140,11 +140,9 @@ parse_cmdline:
 		ld		b,a
 		jp		input_and_screen.print_at
 
-fake:
-		dc		"bin/ls c000"
 	ENDIF
 
-s_copyright:	dc	"esxMON V0.03 (C) 20261119 Mr.Spiv/ScoopeX"
+s_copyright:	dc	"esxMON V0.03 (C) 20261120 Mr.Spiv/ScoopeX"
 
 		INCLUDE	"zxmon.inc"		
 		INCLUDE "string.asm"

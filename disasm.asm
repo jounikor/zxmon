@@ -223,13 +223,19 @@ prefix_FD:
 		cp		0xed
 		jr		z,prefix_ED_NONI
 		cp		0xcb
-		inc		ix
 		jp		nz,normal_opcode_after_DDFD
 		; This is DD/FD prefixed CB.. skip displacement and get new opcode
-		; This is just CD prfix.. get new opcode
-prefix_CB:
-		; C_flag = 0 here..
+		; Peek next opcode.. a bit hacky..
+
+		and		a				; Clears Z_flag
+		inc		ix
 		call	get_A_from_IX
+		dec		ix
+prefix_CB:
+		call	z,get_A_from_IX
+		; FIX DD/FD case.. IX is 1 too big
+
+
 		; 76543210 opcode
 		; xxyyyzzz
 		; Where
@@ -241,9 +247,9 @@ prefix_CB:
 		; B = IX/IY index
 		; C = HL/IX/IY marker
 		;
-		;and		11000000b
-		;rlca
-		;rlca
+		; Special case
+
+
 		rla		; Shifts in 0
 		rla		; Shifts in bit 7
 		rla		; Shifts in bit 6
@@ -313,7 +319,6 @@ prefix_ED_NEG:
 
 prefix_ED_RET:
 		and		00001000b
-.it_is_RETN:
 		call	print_opcode_str_index8_shift
 		db		'R'-32,'E'-32,'T'-32,'N'-32+128
 		db		'R'-32,'E'-32,'T'-32,'1'-32+128
@@ -349,7 +354,9 @@ func_bli:
 		db		'*'-32+128
 
 normal_opcode_after_DDFD:
-		; Skipped index byte and use one in B instead
+		; IX points now to displacement byte OR
+		; to next opcode depending on the case
+		; We can always check that if C > 0
 normal_opcode:
 		; Ok.. normal opcode..
 		; 76543210
@@ -377,6 +384,8 @@ opcode_halt:
 		db		ARG_LD+64,ARG_R_Y,','-32,ARG_R_Z+128					; LD r[y],r[z]
 
 opcode_10nnnnnn:
+		; this command is eligible for undocumented DD/FD prefixed opcodes
+		set		7,c
 		call	print_opcode_str_index0
 		db		ARG_ALU_Y,ARG_R_Z+128				; ADD A,r[z] etc
 
@@ -405,9 +414,6 @@ opcode_11_misc:
 		ld		a,c		; FIX
 		;and		a
 		and		00000011b
-		jr		z,.IX_IY_ok
-		dec		ix
-.IX_IY_ok:
 		ld		a,l
 		inc		a
 		; Check for RST
@@ -477,17 +483,7 @@ opcode_00_reljumps:
 opcode_00_ldadd16_imm:
 		and		00001000b
 		jr		z,.ld16imm
-		;ld		a,1
 .ld16imm:
-		; check if there was DD/FD prefix.. if so fix IX
-		ld		l,a
-		ld		a,c		; FIX
-		;and		a
-		and		00000011b
-		jr		z,.no_DD_or_FD_prefix
-		dec		ix
-.no_DD_or_FD_prefix:
-		ld		a,l
 		call	print_opcode_str_index8_shift
 		db		ARG_LD+64,ARG_RP_P,','-32,ARG_IMM16_INC+128			; LD rp[p],imm16
 		db		'A'-32,'D'-32,'D'-32+64,ARG_HL,','-32,ARG_RP_P+128	; ADD HL,rp[p]
@@ -501,7 +497,7 @@ opcode_00_indirect_ld:
 		db		ARG_LD+64,'('-32,ARG_IMM16_INC,')'-32,','-32,ARG_HL+128
 		db		ARG_LD+64,ARG_HL,','-32,'('-32,ARG_IMM16_INC,')'-32+128
 		db		ARG_LD+64,'('-32,ARG_IMM16_INC,')'-32,','-32,'A'-32+128
-		db		ARG_LD+64,'A'-32,','-32,'('-32,ARG_IMM8_INC,')'-32+128
+		db		ARG_LD+64,'A'-32,','-32,'('-32,ARG_IMM16_INC,')'-32+128
 
 opcode_00_incdec16:
 		and		00001000b
@@ -512,6 +508,8 @@ opcode_00_inc16:
 
 opcode_00_inc8:
 opcode_00_dec8:
+		; These opcodes are undocumented eligible
+		set		7,c
 opcode_00_ld8_imm:
 		and		00000011b
 		call	print_opcode_str_index
@@ -805,11 +803,6 @@ func_ARG_R_Z:
 		add		a,c
 		add		a,c
 .not_eligble_undocumented:
-		cp		7
-		jr		c,.no_DD_or_FD
-		dec		ix			; we have increased IX earlier
-							; for no reason.. UGLY FIX
-.no_DD_or_FD:
 .not_H_or_L:
 		call	print_opcode_str_index
 		db		'A'-32+128						; 0
@@ -827,6 +820,7 @@ func_ARG_R_Z:
 .check_IX_IY:
 		res		7,c								; Undo undocumented thing
 		ld		a,c
+.no_displacement:
 		call	print_opcode_str_index8
 		db		'('-32,ARG_HL,')'-32+128
 		db		'('-32,ARG_HL,ARG_INDEX_B,')'-32+128
@@ -843,6 +837,7 @@ func_ARG_Y:
 		ret
 
 func_ARG_INDEX_B:
+		inc		ix
 		ex		de,hl
 		ld		a,b
 		cp		128
