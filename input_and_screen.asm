@@ -524,14 +524,6 @@ with_caps:
 		db    0,'L','K','J','H'
 		db  ' ',  0,'M','N','B'
 
-
-	DISPLAY	"raw_keymap: ",/H,raw_keymap
-	DISPLAY	"to_ascii: ",/H,to_ascii
-	DISPLAY	"with_shift: ",/H,with_shift
-
-
-
-
 ;-----------------------------------------------------------------------------
 ;
 ; Scroll screen up 6 pix at time starting byte offset E from row D, amd
@@ -555,46 +547,63 @@ scroll_up_whole_screen:
 		ld		bc,0x1f20
 scroll_up:
 		push	hl
-.row_loop:
-		push	bc
-		ld		b,6
-.column_loop:
-		push	bc
-		push	de
+
 		call	calculate_xy_addr
-		; HL current line address
+		push	hl
 		ld		a,d
 		add		a,6
 		ld		d,a
-		push	hl
 		call	calculate_xy_addr
-		; HL = next line address
+		pop		de
+
+		; Multiply B by 6
+		ld		a,b
+		add		a,a
+		ld		b,a
+		add		a,a
+		add		a,b
+		ld		b,a
+
+.row_loop:
+		; DE = ptr to dst row
+		; HL = ptr to src row
+		;  B = lines to move
+		push	bc
+		push	hl
+		push	de
+
 		ld		b,0
-		pop		de
 		ldir
-		pop		de
-		inc		d
-		pop		bc
-		djnz	.column_loop
+
+		; dst row
+		pop		hl
+		call	next_line_HL
+		ex		de,hl
+		; src row
+		pop		hl
+		call	next_line_HL
+
 		pop		bc
 		djnz	.row_loop
+
 		; Clear last line
 		ld		b,6
+		ex		de,hl
 .clear_loop:
+		push	hl
 		push	bc
-		call	calculate_xy_addr
 		xor		a
-		ld		b,c
 .clear_line:
 		ld		(hl),a
 		inc		l
-		djnz	.clear_line
-		inc		d
+		dec		c
+		jr		nz,.clear_line
 		pop		bc
+		pop		hl
+		call	next_line_HL
 		djnz	.clear_loop
 		pop		hl
 		ret
-
 
 ;-----------------------------------------------------------------------------
 ;
@@ -643,36 +652,22 @@ print_at:
 ;
 ; Input:
 ;  A = ASCII
-;  D = y [0..191] or [0..31] for _char 
-;  E = x [0..255] or [0..41] for _char
+;  D = y [0..191] or [0..31] for print_at_char 
+;  E = x [0..255] or [0..41] for print_at_char
 ;
 ; Returns:
-;  D = input D + 6
+;  None
 ;
 ; Trashes:
-;  BC,D,HL,A
+;  BC,HL,A
 ;
 ;
-
 print_at_char:
 		push	af
-		
 		; y = D x 6
-		ld		a,d
-		add		a,a
-		ld		d,a
-		add		a,a
-		add		a,d
-		ld		d,a
-
+		call	mul_Dx6
 		; x = E x 6
-		ld		a,e
-		add		a,a
-		ld		e,a
-		add		a,a
-		add		a,e
-		ld		e,a
-
+		call	mul_Ex6
 		pop		af
 print_xy_char:
 		ld		h,0
@@ -688,9 +683,9 @@ print_xy_char:
 		; HL = ptr to font gfx
 		ld		b,6
 		push	hl
+		call	calculate_xy_addr
 
 .print_loop:
-		call	calculate_xy_addr
 		ex		(sp),hl
 		; HL   = ptr to font
 		; (SP) = ptr to screen
@@ -701,7 +696,7 @@ print_xy_char:
 		; HL   = ptr to screen
 		; (SP) = ptr to font
 		;    C = font data
-		push	de
+		push	af
 		push	bc
 		ld		b,0
 		ld		de,1000000111111111b
@@ -723,9 +718,10 @@ print_xy_char:
 		and		e
 		or		b			; Clears C_flag
 		ld		(hl),a
+		dec		l
+		call	next_line_HL
 		pop		bc
-		pop		de
-		inc		d
+		pop		af
 		djnz	.print_loop
 		pop		hl
 		ret
@@ -748,20 +744,10 @@ print_xy_char:
 ;   
 calculate_xy_char_addr:
 		; x6
-		ld		a,d
-		add		a,a
-		ld		d,a
-		add		a,a
-		add		a,d
-		ld		d,a
+		call	mul_Dx6
 calculate_xy_addr_x:
 		; x6
-		ld		a,e
-		add		a,a
-		ld		e,a
-		add		a,a
-		add		a,e
-		ld		e,a
+		call	mul_Ex6
 calculate_xy_addr:
 		call	calculate_y_addr
 		ld		a,11111000b
@@ -773,6 +759,25 @@ calculate_xy_addr:
 		ld		l,a
 		ld		a,00000111b
 		and		e
+		ret
+
+mul_Dx6:
+		; x6
+		ld		a,d
+		add		a,a
+		ld		d,a
+		add		a,a
+		add		a,d
+		ld		d,a
+		ret
+mul_Ex6:
+		; x6
+		ld		a,e
+		add		a,a
+		ld		e,a
+		add		a,a
+		add		a,e
+		ld		e,a
 		ret
 
 ;-----------------------------------------------------------------------------

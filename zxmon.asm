@@ -142,7 +142,7 @@ parse_cmdline:
 
 	ENDIF
 
-s_copyright:	dc	"esxMON V0.03 (C) 20261120 Mr.Spiv/ScoopeX"
+s_copyright:	dc	"esxMON V0.03 (C) 20261121 Mr.Spiv/ScoopeX"
 
 		INCLUDE	"zxmon.inc"		
 		INCLUDE "string.asm"

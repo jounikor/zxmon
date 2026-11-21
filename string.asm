@@ -68,34 +68,22 @@ word_in_DE_to_ascii:
 		call	byte_in_A_to_ascii
 		ld		a,e
 byte_in_A_to_ascii:
-		push	de
-		ld		e,a
-		and		11110000b
+		push	af
 		rrca
 		rrca
 		rrca
 		rrca
+		call	.convert_nibble
+		pop		af
+.convert_nibble:
+		and		00001111b
 		cp		0x0a
 		jr c,	.letter1
 		add		a,'A'-'0'-10
 .letter1:
 		add		a,'0'
-		; latter byte will be LD D,C
-
 		ld		(hl),a
 		inc		hl
-		
-		ld		a,00001111b
-		and		e
-		cp		0x0a
-		jr c,	.letter2
-		add		a,'A'-'0'-10
-.letter2:
-		add		a,'0'
-		; latter byte will be LD D,C
-		ld		(hl),a
-		inc		hl
-		pop		de
 		ret 
 
 ;-----------------------------------------------------------------------------
