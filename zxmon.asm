@@ -152,20 +152,14 @@ s_copyright:	dc	"esxMON V0.03 (C) 20261121 Mr.Spiv/ScoopeX"
 		INCLUDE	"fileio.asm"
 		INCLUDE	"disasm.asm"
 		INCLUDE	"input_and_screen.asm"
-		ds		zxmon.REGS
-		ALIGN	512
 zxmon_end:
-
-; System variables must be 256 bytes aligned.
-;
-	IFDEF REGCMD
-		ORG		(($ + 255) & 0xff00) - zxmon.REGS
 sys_regs:	zxmon.REGS
 sys_regs_end:
-	ELSE
-		ALIGN	256
-	ENDIF
-sys_vars:	zxmon.VARS
+
+; System variables must be 256 bytes aligned.
+		ALIGN	512
+
+sys_vars:	zxmon.VARS = $
 
 		;SAVETAP	"zxmon.tap",main
 		SAVESNA	"zxmon.sna",main

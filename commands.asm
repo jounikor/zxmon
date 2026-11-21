@@ -313,7 +313,7 @@ s_err_c64:
 		dc		"64K RAM SYSTEM 38911 BASIC BYTES FREE"
 s_err_esxdos:
 		db		"ESXDOS error _"
-S_ERR_ESXDOS_LEN	equ	13
+S_ERR_ESXDOS_LEN	equ	15
 s_err_user_abort:
 		dc		"Command aborted"
 s_err_page:
@@ -325,7 +325,9 @@ s_help:
 		db		15
 		;        0         1         2.        3          4
 		;        0123456789012345678901234567890123456789012
-		dc		"COMMAND SYNTAX:"
+		dc		"Command line options:"
+		dc		".esxmon [<file> <addr> [<off> [<len>]]]"
+		dc		"Monitor Command Syntax:"
 		dc		"m [<addr>]                   :show 7 lines"
 		dc		"mm [<addr>]                 :show 15 lines"
 		dc		"p <addr> [<num>|'<str>] ..           :poke"

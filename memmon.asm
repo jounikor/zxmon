@@ -527,6 +527,7 @@ f_registers:
 		ld		l,zxmon.VARS.output_buf
 		ld		de,s_registers
 		ld		bc,0x0403
+		ld		ix,zxmon.sys_regs_end
 .registers_print_loop:
 		push	bc
 		push	hl
